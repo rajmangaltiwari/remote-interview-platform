@@ -2,6 +2,7 @@ import { Inngest } from "inngest"
 import { connectDB } from "./db.js"
 import  User  from "../models/User.js"
 import { ENV } from "./env.js"
+import { deleteStreamUser, upsertStreamUser } from "./stream.js";
 
 export const inngest = new Inngest({ id: "remote-interview", signingKey: ENV.INNGEST_SIGNING_KEY });
 
@@ -22,6 +23,12 @@ const syncUser = inngest.createFunction(
         }
 
         await User.create(newUser)
+
+        await upsertStreamUser({
+            id: newUser.clerkId.toString(),
+            name: newUser.name,
+            image: newUser.profile_image,
+        })
     }
 )
 
@@ -34,6 +41,8 @@ const deleteUserFromDB = inngest.createFunction(
 
         const {id} = event.data
         await User.deleteOne({clerkId:id})
+
+        await deleteStreamUser(id.toString())
     }
     )        
 
