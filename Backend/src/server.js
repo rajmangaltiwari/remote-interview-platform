@@ -9,6 +9,7 @@ import { connectDB } from "./lib/db.js";
 import { inngest,functions } from "./lib/inngest.js";
 import { protectRoute } from "./middleware/protectRoute.js";
 import chatRoutes from "./routes/chatRoutes.js"
+import sessionRoute from "./routes/sessionRoute.js"
 
 const app = express();
 
@@ -16,11 +17,12 @@ const __dirname = path.resolve();
 
 // middleware
 app.use(express.json())
-app.use(cors({origin:ENV.CLIENT_URL,credential:true}))
+app.use(cors({origin: ENV.CLIENT_URL,credentials: true}))
 app.use(clerkMiddleware())
 
 app.use("/api/inngest",serve({client:inngest, functions}))
 app.use("/api/chat", chatRoutes)
+app.use("/api/session", sessionRoute)
 
 app.get("/hello", (req,res)=>{
     res.status(200).json({ msg : "sucess from backend"});
