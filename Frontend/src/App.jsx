@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from 'react-router'
 import { Toaster} from 'react-hot-toast'
 
 import Homepage from './pages/Homepage'
-import Problempage from './pages/Problempage'
+import Problempage from './pages/ProblemsPage'
 import Dashboard from './pages/Dashboard'
 
 function App() {
