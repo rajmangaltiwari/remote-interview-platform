@@ -3,8 +3,10 @@ import { Navigate, Route, Routes } from 'react-router'
 import { Toaster} from 'react-hot-toast'
 
 import Homepage from './pages/Homepage'
-import Problempage from './pages/ProblemsPage'
+import ProblemsPage from './pages/ProblemsPage'
 import Dashboard from './pages/Dashboard'
+import Problempage from './pages/Problempage'
+
 
 function App() {
 
@@ -16,7 +18,9 @@ function App() {
       <Routes>
         <Route path='/' element={<Homepage />} />
         <Route path='/dashboard' element={isSignedIn ? <Dashboard /> : <Navigate to='/' />} />
-        <Route path='/problems' element={isSignedIn ? <Problempage /> : <Navigate to='/' />} />
+        <Route path='/problems' element={isSignedIn ? <ProblemsPage /> : <Navigate to='/' />} />
+        <Route path='/problem/:id' element={isSignedIn ? <Problempage/> : <Navigate to='/' />} />
+        
       </Routes>
     <Toaster />
     </>
