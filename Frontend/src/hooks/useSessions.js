@@ -50,8 +50,18 @@ export const useJoinSession = () => {
   const result = useMutation({
     mutationKey: ["joinSession"],
     mutationFn: sessionApi.joinSession,
-    onSuccess: () => toast.success("Joined session successfully!"),
-    onError: (error) => toast.error(error.response?.data?.message || "Failed to join session"),
+    onSuccess: () => toast.success("Joined session successfully!"), // This toast won't show if the join fails.
+    onError: (error) => {
+      console.error("Failed to join session:", error); // Keep this for debugging
+
+      if (error.response?.status === 409) {
+        // Handle the specific conflict error
+        toast.error(error.response?.data?.message || "Cannot join session. You may already be in it, or it might be full.");
+      } else {
+        // Handle other potential errors (e.g., 404 Not Found, 500 Server Error)
+        toast.error(error.response?.data?.message || "Failed to join session");
+      }
+    },
   });
 
   return result;
