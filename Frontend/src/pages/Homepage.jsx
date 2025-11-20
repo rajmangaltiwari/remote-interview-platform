@@ -8,9 +8,10 @@ import {
   VideoIcon,
   ZapIcon,
 } from "lucide-react";
-import { SignInButton } from "@clerk/clerk-react";
+import { SignInButton, useUser } from "@clerk/clerk-react";
 
 function Homepage() {
+  const { isSignedIn } = useUser();
   return (
     <div className="bg-linear-to-br from-base-100 via-base-200 to-base-300">
       {/* NAVBAR */}
@@ -84,13 +85,21 @@ function Homepage() {
 
             {/* CTA Buttons */}
             <div className="flex flex-wrap gap-4">
-              <SignInButton mode="modal">
-                <button className="btn btn-primary btn-lg">
-                  Start Coding Now
-                  <ArrowRightIcon className="size-5" />
-                </button>
-              </SignInButton>
-
+              {isSignedIn ? (
+                <Link to="/problems">
+                  <button className="btn btn-primary btn-lg">
+                    Start Coding Now
+                    <ArrowRightIcon className="size-5" />
+                  </button>
+                </Link>
+              ) : (
+                <SignInButton mode="modal">
+                  <button className="btn btn-primary btn-lg">
+                    Start Coding Now
+                    <ArrowRightIcon className="size-5" />
+                  </button>
+                </SignInButton>
+              )}
               <button className="btn btn-outline btn-lg">
                 <VideoIcon className="size-5" />
                 Watch Demo
