@@ -37,6 +37,10 @@ export const useSessionById = (id) => {
     queryFn: () => sessionApi.getSessionById(id),
     enabled: !!id,
     refetchInterval: 5000, // refetch every 5 seconds to detect session status changes
+    retry: 1,
+    onError: (error) => {
+      console.error("Error fetching session:", error);
+    },
   });
 
   return result;
