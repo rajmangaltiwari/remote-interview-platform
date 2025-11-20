@@ -44,7 +44,7 @@ export async function getActiveSessions(req, res) {
     try {
         const session = await Session.find({status: "active"})
         .populate("host","name profileImage email clerkId")
-        .populate("participants","name profileImage email clerkId")
+        .populate("participant","name profileImage email clerkId")
         .sort({createdAt: -1})
         .limit(20);
         res.status(200).json({sessions: session});
@@ -59,7 +59,7 @@ export async function getMyRecentSessions(req, res) {
         const userId = req.user.id;
         const sessions = await Session.find({
             status: "completed",
-            $or: [{host: userId}, {participants: userId}]}).sort({updatedAt: -1}).limit(20);
+            $or: [{host: userId}, {participant: userId}]}).sort({updatedAt: -1}).limit(20);
 
         res.status(200).json({sessions});
         
@@ -74,7 +74,7 @@ export async function getSessionById(req, res) {
         const {id} = req.params;    
         const session = await Session.findById(id)
             .populate("host","name profileImage email clerkId")
-            .populate("participants","name profileImage email clerkId");
+            .populate("participant","name profileImage email clerkId");
 
         if(!session) {
             return res.status(404).json({msg: "session not found"});
@@ -105,10 +105,10 @@ export async function joinSession(req, res) {
             return res.status(400).json({msg: "host cannot join their own session"});
         }
         
-        if(session.participants) {
+        if(session.participant) {
             return res.status(409).json({msg: "session already full"});
         }
-        session.participants = userId;
+        session.participant = userId;
         await session.save();
         // add user to stream call
         const channel = chatClient.channel("messaging",session.callId);
