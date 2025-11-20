@@ -22,7 +22,7 @@ app.use(clerkMiddleware())
 
 app.use("/api/inngest",serve({client:inngest, functions}))
 app.use("/api/chat", chatRoutes)
-app.use("/api/session", sessionRoute)
+app.use("/api/sessions", sessionRoute)
 
 app.get("/hello", (req,res)=>{
     res.status(200).json({ msg : "sucess from backend"});

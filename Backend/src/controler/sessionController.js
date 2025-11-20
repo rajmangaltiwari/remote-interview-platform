@@ -3,13 +3,17 @@ import { chatClient, streamClient } from "../lib/stream.js";
 
 export async function createSession(req, res) {
     try {
-        const {problem, difficulty} = req.body;
+        let {problem, difficulty} = req.body;
         const userId = req.user.id;
         const clerkId = req.user.clerkId;
 
         if(!problem || !difficulty) {
             return res.status(400).json({msg: "problem and difficulty are required"});
         }
+        
+        // Capitalize first letter to match schema enum
+        difficulty = difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase();
+        
         const callId = `session_${Date.now()}_${Math.random().toString(36).substring(7)}`;
         // create session in db
         const session = await Session.create({problem, difficulty, host: userId, callId})
@@ -30,14 +34,17 @@ export async function createSession(req, res) {
         await channel.create();
         res.status(201).json({session: session});
     } catch (error) {
-        console.log("Error in createSession controller");
-        res.status(500).json({msg: "Internal server error"});
+        console.error("Error in createSession controller:", error);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+        res.status(500).json({msg: "Internal server error", error: error.message});
     }
 }
 export async function getActiveSessions(req, res) {
     try {
         const session = await Session.find({status: "active"})
         .populate("host","name profileImage email clerkId")
+        .populate("participants","name profileImage email clerkId")
         .sort({createdAt: -1})
         .limit(20);
         res.status(200).json({sessions: session});
