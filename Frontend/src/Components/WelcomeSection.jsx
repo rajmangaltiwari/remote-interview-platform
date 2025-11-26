@@ -13,7 +13,7 @@ function WelcomeSection({ onCreateSession }) {
               <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-primary to-secondary flex items-center justify-center">
                 <SparklesIcon className="w-6 h-6 text-white" />
               </div>
-              <h1 className="text-5xl font-black bg-linear-to-br from-primary via-secondary to-accent bg-clip-text text-transparent">
+              <h1 className="text-5xl font-black bg-linear-to-br from-primary via-secondary to-accent bg-clip-text text-transparent pb-2">
                 Welcome back, {user?.firstName || "there"}!
               </h1>
             </div>
