@@ -7,7 +7,8 @@ export const useCreateSession = () => {
     mutationKey: ["createSession"],
     mutationFn: sessionApi.createSession,
     onSuccess: () => toast.success("Session created successfully!"),
-    onError: (error) => toast.error(error.response?.data?.message || "Failed to create room"),
+    onError: (error) =>
+      toast.error(error.response?.data?.message || "Failed to create room"),
   });
 
   return result;
@@ -56,11 +57,20 @@ export const useJoinSession = () => {
 
       if (error.response?.status === 409) {
         // Handle the specific conflict error
-        toast.error(error.response?.data?.message || "Cannot join session. You may already be in it, or it might be full.");
-      } else {
-        // Handle other potential errors (e.g., 404 Not Found, 500 Server Error)
-        toast.error(error.response?.data?.message || "Failed to join session");
+        toast.error(
+          error.response?.data?.msg ||
+            "Cannot join session. You may already be in it, or it might be full."
+        );
+        return;
       }
+
+      if (error.response?.status === 400 && error.response?.data?.msg) {
+        toast.error(error.response.data.msg);
+        return;
+      }
+
+      // Handle other potential errors (e.g., 404 Not Found, 500 Server Error)
+      toast.error(error.response?.data?.msg || "Failed to join session");
     },
   });
 
@@ -72,7 +82,8 @@ export const useEndSession = () => {
     mutationKey: ["endSession"],
     mutationFn: sessionApi.endSession,
     onSuccess: () => toast.success("Session ended successfully!"),
-    onError: (error) => toast.error(error.response?.data?.message || "Failed to end session"),
+    onError: (error) =>
+      toast.error(error.response?.data?.message || "Failed to end session"),
   });
 
   return result;

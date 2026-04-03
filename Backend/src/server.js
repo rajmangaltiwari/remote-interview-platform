@@ -33,7 +33,7 @@ if(ENV.NODE_ENV === "production") {
     // Serve static files from Frontend/dist
     app.use(express.static(path.join(__dirname, "../Frontend/dist")));
 
-    app.get("/{*any}", (req, res) => {
+    app.get("/*splat", (req, res) => {
         res.sendFile(path.join(__dirname, "../Frontend/dist/index.html"));
     });
 }

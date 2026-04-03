@@ -16,7 +16,7 @@ const sessionSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    participant: {
+    participants: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
@@ -32,17 +32,16 @@ const sessionSchema = new mongoose.Schema(
       default: "",
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
 );
 
-// Virtual for participant to be backward compatible with frontend
-sessionSchema.virtual("participant_user").get(function () {
-  return this.participant;
+sessionSchema.virtual("participant").get(function () {
+  return this.participants;
 });
-
-// Ensure virtual fields are included in toJSON and toObject outputs.
-sessionSchema.set("toJSON", { virtuals: true });
-sessionSchema.set("toObject", { virtuals: true });
 
 const Session = mongoose.model("Session", sessionSchema);
 
