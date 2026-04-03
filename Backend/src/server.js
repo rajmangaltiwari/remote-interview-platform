@@ -17,7 +17,16 @@ const __dirname = path.resolve();
 
 // middleware
 app.use(express.json())
-app.use(cors({origin: ENV.CLIENT_URL,credentials: true}))
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://remote-interview-platform-t3it.vercel.app",
+      ENV.CLIENT_URL,
+    ].filter(Boolean),
+    credentials: true,
+  })
+);
 app.use(clerkMiddleware())
 
 app.use("/api/inngest",serve({client:inngest, functions}))
