@@ -2,6 +2,7 @@ import { chatClient } from "../lib/stream.js"
 
 export async function getStreamToken(req,res){
     try {
+        console.log("[getStreamToken] Generating token for:", req.user.clerkId, req.user.name);
         const token = chatClient.createToken(req.user.clerkId)
         
         if (!token) {
@@ -12,7 +13,7 @@ export async function getStreamToken(req,res){
             token,
             userId: req.user.clerkId,
             userName: req.user.name,
-            image: req.user.profileImage,
+            image: req.user.profileImage || "",
         })
     } catch (error) {
         console.error("Error in getStreamToken controller:", error);

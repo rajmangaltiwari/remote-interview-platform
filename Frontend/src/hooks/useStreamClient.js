@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { StreamChat } from "stream-chat";
 import toast from "react-hot-toast";
 import { initializeStreamClient, disconnectStreamClient } from "../lib/stream";
@@ -11,62 +11,110 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
   const [channel, setChannel] = useState(null);
   const [isInitializingCall, setIsInitializingCall] = useState(true);
 
+  // Use refs to track initialization and prevent duplicate calls
+  const isInitializedRef = useRef(false);
+  const isInitializingRef = useRef(false);
+
+  // Extract stable values from session to avoid re-running on every refetch
+  const callId = session?.callId;
+  const sessionStatus = session?.status;
+
   useEffect(() => {
     let videoCall = null;
     let chatClientInstance = null;
+    let cancelled = false;
 
     const initCall = async () => {
-      if (!session?.callId) return;
-      if (!isHost && !isParticipant) return;
-      if (session.status === "completed") return;
+      console.log("[StreamClient] initCall triggered", {
+        callId, sessionStatus, isHost, isParticipant,
+        isInitialized: isInitializedRef.current,
+        isInitializing: isInitializingRef.current,
+      });
+
+      // Skip if already initialized or currently initializing
+      if (isInitializedRef.current || isInitializingRef.current) {
+        console.log("[StreamClient] Skipping — already initialized or in progress");
+        return;
+      }
+      if (!callId) { console.log("[StreamClient] Skipping — no callId"); return; }
+      if (!isHost && !isParticipant) { console.log("[StreamClient] Skipping — not host or participant"); return; }
+      if (sessionStatus === "completed") { console.log("[StreamClient] Skipping — session completed"); return; }
+
+      isInitializingRef.current = true;
 
       try {
-        const { token, userId, userName, userImage } = await sessionApi.getStreamToken();
+        console.log("[StreamClient] Fetching stream token...");
+        const { token, userId, userName, image } = await sessionApi.getStreamToken();
+        console.log("[StreamClient] Token received for user:", userId);
 
+        if (cancelled) return;
+
+        console.log("[StreamClient] Initializing video client...");
         const client = await initializeStreamClient(
           {
             id: userId,
             name: userName,
-            image: userImage,
+            image: image,
           },
           token
         );
 
+        if (cancelled) return;
+
         setStreamClient(client);
 
-        videoCall = client.call("default", session.callId);
+        console.log("[StreamClient] Joining video call:", callId);
+        videoCall = client.call("default", callId);
         await videoCall.join({ create: true });
+        console.log("[StreamClient] Video call joined successfully");
+
+        if (cancelled) return;
+
         setCall(videoCall);
 
         const apiKey = import.meta.env.VITE_STREAM_API_KEY;
         chatClientInstance = StreamChat.getInstance(apiKey);
 
+        console.log("[StreamClient] Connecting chat user...");
         await chatClientInstance.connectUser(
           {
             id: userId,
             name: userName,
-            image: userImage,
+            image: image,
           },
           token
         );
+
+        if (cancelled) return;
+
         setChatClient(chatClientInstance);
 
-        const chatChannel = chatClientInstance.channel("messaging", session.callId);
+        console.log("[StreamClient] Watching chat channel:", callId);
+        const chatChannel = chatClientInstance.channel("messaging", callId);
         await chatChannel.watch();
+
+        if (cancelled) return;
+
         setChannel(chatChannel);
+        isInitializedRef.current = true;
+        console.log("[StreamClient] Fully initialized successfully");
       } catch (error) {
-        toast.error("Failed to join video call");
-        console.error("Error init call", error);
+        if (!cancelled) {
+          toast.error("Failed to join video call");
+          console.error("[StreamClient] Error init call:", error);
+        }
       } finally {
-        setIsInitializingCall(false);
+        isInitializingRef.current = false;
+        if (!cancelled) {
+          setIsInitializingCall(false);
+        }
       }
     };
 
-    if (session && !loadingSession) initCall();
+    if (!loadingSession && callId) initCall();
 
-    // cleanup - performance reasons
     return () => {
-      // iife
+      cancelled = true;
       (async () => {
         try {
           if (videoCall) await videoCall.leave();
@@ -75,9 +123,11 @@ function useStreamClient(session, loadingSession, isHost, isParticipant) {
         } catch (error) {
           console.error("Cleanup error:", error);
         }
+        isInitializedRef.current = false;
+        isInitializingRef.current = false;
       })();
     };
-  }, [session, loadingSession, isHost, isParticipant]);
+  }, [callId, sessionStatus, loadingSession, isHost, isParticipant]);
 
   return {
     streamClient,

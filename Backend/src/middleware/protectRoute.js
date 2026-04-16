@@ -1,5 +1,6 @@
-import { requireAuth } from "@clerk/express";
+import { requireAuth, clerkClient } from "@clerk/express";
 import User from "../models/User.js";
+import { upsertStreamUser } from "../lib/stream.js";
 
 export const protectRoute = [
   requireAuth(),
@@ -9,8 +10,34 @@ export const protectRoute = [
       if (!clerkId)
         return res.status(401).json({ msg: "Unauthorized - invalid token" });
 
-      const user = await User.findOne({ clerkId });
-      if (!user) return res.status(404).json({ msg: "user not found" });
+      let user = await User.findOne({ clerkId });
+
+      // If user doesn't exist in MongoDB, create them from Clerk data
+      // This handles cases where the Inngest webhook didn't fire or failed
+      if (!user) {
+        console.log("[protectRoute] User not found in DB, syncing from Clerk:", clerkId);
+        try {
+          const clerkUser = await clerkClient.users.getUser(clerkId);
+          user = await User.create({
+            clerkId: clerkUser.id,
+            email: clerkUser.emailAddresses[0]?.emailAddress,
+            name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim(),
+            profileImage: clerkUser.imageUrl || "",
+          });
+
+          // Also sync to Stream
+          await upsertStreamUser({
+            id: user.clerkId,
+            name: user.name,
+            image: user.profileImage,
+          });
+
+          console.log("[protectRoute] User synced successfully:", user._id);
+        } catch (syncError) {
+          console.error("[protectRoute] Failed to sync user from Clerk:", syncError);
+          return res.status(404).json({ msg: "user not found and sync failed" });
+        }
+      }
 
       req.user = user;
       next();

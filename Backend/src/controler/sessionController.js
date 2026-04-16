@@ -7,6 +7,8 @@ export async function createSession(req, res) {
     const userId = req.user.id;
     const clerkId = req.user.clerkId;
 
+    console.log("[createSession] Request:", { problem, difficulty, userId, clerkId });
+
     if (!problem || !difficulty) {
       return res
         .status(400)
@@ -27,7 +29,10 @@ export async function createSession(req, res) {
       host: userId,
       callId,
     });
+    console.log("[createSession] Session created in DB:", session._id, "callId:", callId);
+
     //create stream video call
+    console.log("[createSession] Creating Stream video call...");
     await streamClient.video.call("default", callId).getOrCreate({
       data: {
         created_by_id: clerkId,
@@ -35,13 +40,17 @@ export async function createSession(req, res) {
       },
     });
 
+    console.log("[createSession] Stream video call created successfully");
+
     //chat messaging
+    console.log("[createSession] Creating Stream chat channel...");
     const channel = chatClient.channel("messaging", callId, {
       name: `${problem} session`,
       created_by_id: clerkId,
       members: [clerkId],
     });
     await channel.create();
+    console.log("[createSession] Chat channel created. Session ready:", session._id);
     res.status(201).json({ session: session });
   } catch (error) {
     console.error("Error in createSession controller:", error);
@@ -106,6 +115,8 @@ export async function joinSession(req, res) {
     const userId = req.user.id;
     const clerkId = req.user.clerkId;
 
+    console.log("[joinSession] User:", userId, "clerkId:", clerkId, "joining session:", id);
+
     const session = await Session.findById(id);
     if (!session) {
       return res.status(404).json({ msg: "session not found" });
@@ -131,6 +142,7 @@ export async function joinSession(req, res) {
 
     session.participants = userId;
     await session.save();
+    console.log("[joinSession] Participant added to session:", id);
 
     try {
       const channel = chatClient.channel("messaging", session.callId);

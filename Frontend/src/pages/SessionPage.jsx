@@ -51,6 +51,7 @@ function SessionPage() {
     if (!session || !user || loadingSession) return;
     if (isHost || isParticipant) return;
 
+    console.log("[SessionPage] Auto-joining session:", id, "isHost:", isHost, "isParticipant:", isParticipant);
     joinSessionMutation.mutate(id, { onSuccess: refetch });
 
     // remove the joinSessionMutation, refetch from dependencies to avoid infinite loop
